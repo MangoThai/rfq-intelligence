@@ -1,0 +1,361 @@
+[
+    {
+      "id": "DEV-001",
+      "description": "Single exact SKU",
+      "sender_email": "achats@atelier-delta.example",
+      "email_text": "Bonjour, merci de nous chiffrer 10 VAN-BR-050.",
+      "expected": {
+        "status": "READY_FOR_QUOTE",
+        "customer_id": "CUST-001",
+        "reason_codes": [],
+        "quote_total_eur": "128.00",
+        "lines": [
+          {
+            "expected_sku": "VAN-BR-050",
+            "expected_match_status": "EXACT_MATCH",
+            "expected_status": "READY_FOR_QUOTE",
+            "expected_reason_codes": [],
+            "expected_subtotal_eur": "128.00"
+          }
+        ]
+      }
+    },
+    {
+      "id": "DEV-002",
+      "description": "Normalized SKU formatting",
+      "sender_email": "paul.martin@mecapro.example",
+      "email_text": "Bonjour, il nous faudrait 20 van br 050. Merci.",
+      "expected": {
+        "status": "READY_FOR_QUOTE",
+        "customer_id": "CUST-002",
+        "reason_codes": [],
+        "quote_total_eur": "236.80",
+        "lines": [
+          {
+            "expected_sku": "VAN-BR-050",
+            "expected_match_status": "MATCHED",
+            "expected_status": "READY_FOR_QUOTE",
+            "expected_reason_codes": [],
+            "expected_subtotal_eur": "236.80"
+          }
+        ]
+      }
+    },
+    {
+      "id": "DEV-003",
+      "description": "Complete three-line RFQ",
+      "sender_email": "paul.martin@mecapro.example",
+      "email_text": "Bonjour,\n\nPouvez-vous nous chiffrer :\n- 20 VAN-BR-050\n- 25 RAC-G14-06\n- 50 m de TUB-PU-BL-064\n\nMerci.",
+      "expected": {
+        "status": "READY_FOR_QUOTE",
+        "customer_id": "CUST-002",
+        "reason_codes": [],
+        "quote_total_eur": "373.30",
+        "lines": [
+          {
+            "expected_sku": "VAN-BR-050",
+            "expected_match_status": "EXACT_MATCH",
+            "expected_status": "READY_FOR_QUOTE",
+            "expected_reason_codes": [],
+            "expected_subtotal_eur": "236.80"
+          },
+          {
+            "expected_sku": "RAC-G14-06",
+            "expected_match_status": "EXACT_MATCH",
+            "expected_status": "READY_FOR_QUOTE",
+            "expected_reason_codes": [],
+            "expected_subtotal_eur": "74.00"
+          },
+          {
+            "expected_sku": "TUB-PU-BL-064",
+            "expected_match_status": "EXACT_MATCH",
+            "expected_status": "READY_FOR_QUOTE",
+            "expected_reason_codes": [],
+            "expected_subtotal_eur": "62.50"
+          }
+        ]
+      }
+    },
+    {
+      "id": "DEV-004",
+      "description": "Unknown sender",
+      "sender_email": "buyer@unknown-company.example",
+      "email_text": "Bonjour, merci de nous chiffrer 10 VAN-BR-050.",
+      "expected": {
+        "status": "REVIEW_REQUIRED",
+        "customer_id": null,
+        "reason_codes": [
+          "CUSTOMER_NOT_FOUND"
+        ],
+        "quote_total_eur": null,
+        "lines": []
+      }
+    },
+    {
+      "id": "DEV-005",
+      "description": "Inactive customer",
+      "sender_email": "achats@industries-valmont.example",
+      "email_text": "Bonjour, merci de nous chiffrer 10 VAN-BR-050.",
+      "expected": {
+        "status": "REVIEW_REQUIRED",
+        "customer_id": "CUST-005",
+        "reason_codes": [
+          "INACTIVE_CUSTOMER"
+        ],
+        "quote_total_eur": null,
+        "lines": []
+      }
+    },
+    {
+      "id": "DEV-006",
+      "description": "Missing quantity",
+      "sender_email": "achats@atelier-delta.example",
+      "email_text": "Bonjour, pouvez-vous nous faire un prix pour VAN-BR-050 ?",
+      "expected": {
+        "status": "REVIEW_REQUIRED",
+        "customer_id": "CUST-001",
+        "reason_codes": [],
+        "quote_total_eur": null,
+        "lines": [
+          {
+            "expected_sku": null,
+            "expected_match_status": null,
+            "expected_status": "REVIEW_REQUIRED",
+            "expected_reason_codes": [
+              "MISSING_QUANTITY",
+              "MISSING_UNIT"
+            ],
+            "expected_subtotal_eur": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "DEV-007",
+      "description": "Unknown product reference",
+      "sender_email": "achats@atelier-delta.example",
+      "email_text": "Merci de nous chiffrer 10 ZX-900.",
+      "expected": {
+        "status": "REVIEW_REQUIRED",
+        "customer_id": "CUST-001",
+        "reason_codes": [],
+        "quote_total_eur": null,
+        "lines": [
+          {
+            "expected_sku": null,
+            "expected_match_status": "NOT_FOUND",
+            "expected_status": "REVIEW_REQUIRED",
+            "expected_reason_codes": [],
+            "expected_subtotal_eur": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "DEV-008",
+      "description": "Pack-size mismatch",
+      "sender_email": "achats@atelier-delta.example",
+      "email_text": "Bonjour, besoin de 30 m de TUB-PU-BL-064.",
+      "expected": {
+        "status": "REVIEW_REQUIRED",
+        "customer_id": "CUST-001",
+        "reason_codes": [],
+        "quote_total_eur": null,
+        "lines": [
+          {
+            "expected_sku": "TUB-PU-BL-064",
+            "expected_match_status": "EXACT_MATCH",
+            "expected_status": "REVIEW_REQUIRED",
+            "expected_reason_codes": [
+              "PACK_SIZE_MISMATCH"
+            ],
+            "expected_subtotal_eur": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "DEV-009",
+      "description": "Insufficient stock",
+      "sender_email": "achats@atelier-delta.example",
+      "email_text": "Bonjour, merci de prévoir 525 m de TUB-PU-BL-064.",
+      "expected": {
+        "status": "REVIEW_REQUIRED",
+        "customer_id": "CUST-001",
+        "reason_codes": [],
+        "quote_total_eur": null,
+        "lines": [
+          {
+            "expected_sku": "TUB-PU-BL-064",
+            "expected_match_status": "EXACT_MATCH",
+            "expected_status": "REVIEW_REQUIRED",
+            "expected_reason_codes": [
+              "INSUFFICIENT_STOCK"
+            ],
+            "expected_subtotal_eur": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "DEV-010",
+      "description": "Precise natural-language product description",
+      "sender_email": "sophie.bernard@novatek.example",
+      "email_text": "Bonjour, pouvez-vous nous chiffrer 8 vannes à boisseau sphérique inox 3/4 ?",
+      "expected": {
+         "status": "REVIEW_REQUIRED",
+        "customer_id": "CUST-003",
+        "reason_codes": [],
+        "quote_total_eur": null,
+        "lines": [
+         {
+          "expected_sku": "VAN-SS-075",
+          "expected_match_status": "MATCHED",
+          "expected_status": "REVIEW_REQUIRED",
+          "expected_reason_codes": [
+           "INSUFFICIENT_STOCK"
+         ],
+         "expected_subtotal_eur": null
+    }
+  ]
+}
+    },
+    {
+      "id": "DEV-011",
+      "description": "Single-character SKU typo",
+      "sender_email": "approvisionnement@maintenance-rhone.example",
+      "email_text": "Bonjour, merci de prévoir 20 RAC-G14-O8.",
+      "expected": {
+        "status": "READY_FOR_QUOTE",
+        "customer_id": "CUST-004",
+        "reason_codes": [],
+        "quote_total_eur": "65.60",
+        "lines": [
+          {
+            "expected_sku": "RAC-G14-08",
+            "expected_match_status": "MATCHED",
+            "expected_status": "READY_FOR_QUOTE",
+            "expected_reason_codes": [],
+            "expected_subtotal_eur": "65.60"
+          }
+        ]
+      }
+    },
+    {
+      "id": "DEV-012",
+      "description": "Ambiguous product description",
+      "sender_email": "achats@atelier-delta.example",
+      "email_text": "Bonjour, il nous faudrait 10 vannes 1/2.",
+      "expected": {
+        "status": "REVIEW_REQUIRED",
+        "customer_id": "CUST-001",
+        "reason_codes": [],
+        "quote_total_eur": null,
+        "lines": [
+          {
+            "expected_sku": null,
+            "expected_match_status": "AMBIGUOUS",
+            "expected_status": "REVIEW_REQUIRED",
+            "expected_reason_codes": [],
+            "expected_subtotal_eur": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "DEV-013",
+      "description": "Mixed valid and unknown lines",
+      "sender_email": "paul.martin@mecapro.example",
+      "email_text": "Bonjour,\n\nBesoin de :\n- 10 VAN-BR-050\n- 4 ZX-900\n- 20 RAC-G14-06\n\nMerci.",
+      "expected": {
+        "status": "REVIEW_REQUIRED",
+        "customer_id": "CUST-002",
+        "reason_codes": [],
+        "quote_total_eur": null,
+        "lines": [
+          {
+            "expected_sku": "VAN-BR-050",
+            "expected_match_status": "EXACT_MATCH",
+            "expected_status": "READY_FOR_QUOTE",
+            "expected_reason_codes": [],
+            "expected_subtotal_eur": "118.40"
+          },
+          {
+            "expected_sku": null,
+            "expected_match_status": "NOT_FOUND",
+            "expected_status": "REVIEW_REQUIRED",
+            "expected_reason_codes": [],
+            "expected_subtotal_eur": null
+          },
+          {
+            "expected_sku": "RAC-G14-06",
+            "expected_match_status": "EXACT_MATCH",
+            "expected_status": "READY_FOR_QUOTE",
+            "expected_reason_codes": [],
+            "expected_subtotal_eur": "59.20"
+          }
+        ]
+      }
+    },
+    {
+      "id": "DEV-014",
+      "description": "No RFQ lines in email",
+      "sender_email": "achats@atelier-delta.example",
+      "email_text": "Bonjour, merci pour votre retour. Bonne journée.",
+      "expected": {
+        "status": "REVIEW_REQUIRED",
+        "customer_id": "CUST-001",
+        "reason_codes": [
+          "NO_LINES_EXTRACTED"
+        ],
+        "quote_total_eur": null,
+        "lines": []
+      }
+    },
+    {
+      "id": "DEV-015",
+      "description": "Customer explicitly requests substitution",
+      "sender_email": "paul.martin@mecapro.example",
+      "email_text": "Bonjour, il nous faut 20 RAC-G14-08, ou un équivalent si vous n'avez plus cette référence.",
+      "expected": {
+        "status": "REVIEW_REQUIRED",
+        "customer_id": "CUST-002",
+        "reason_codes": [],
+        "quote_total_eur": null,
+        "lines": [
+          {
+            "expected_sku": "RAC-G14-08",
+            "expected_match_status": "EXACT_MATCH",
+            "expected_status": "REVIEW_REQUIRED",
+            "expected_reason_codes": [
+              "SUBSTITUTION_REQUESTED"
+            ],
+            "expected_subtotal_eur": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "DEV-016",
+      "description": "Unverified urgent delivery constraint",
+      "sender_email": "achats@atelier-delta.example",
+      "email_text": "Bonjour, il me faut 5 VAN-SS-075 impérativement demain matin.",
+      "expected": {
+        "status": "REVIEW_REQUIRED",
+        "customer_id": "CUST-001",
+        "reason_codes": [],
+        "quote_total_eur": null,
+        "lines": [
+          {
+            "expected_sku": "VAN-SS-075",
+            "expected_match_status": "EXACT_MATCH",
+            "expected_status": "REVIEW_REQUIRED",
+            "expected_reason_codes": [
+              "DELIVERY_CONSTRAINT_UNVERIFIED"
+            ],
+            "expected_subtotal_eur": null
+          }
+        ]
+      }
+    }
+  ]

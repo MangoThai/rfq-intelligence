@@ -1,0 +1,17 @@
+sku,name,family,material,thread_type,thread_size,tube_outer_mm,tube_inner_mm,color,profile,connection_gender,sales_unit,pack_size,base_price_eur,stock_qty,lead_time_days,active
+VAN-BR-050,Vanne à boisseau sphérique laiton 1/2",valve,brass,G,1/2,,,,,,piece,1,12.80,86,2,true
+VAN-BR-075,Vanne à boisseau sphérique laiton 3/4",valve,brass,G,3/4,,,,,,piece,1,16.40,42,2,true
+VAN-SS-050,Vanne à boisseau sphérique inox 1/2",valve,stainless_steel,G,1/2,,,,,,piece,1,28.90,18,5,true
+VAN-SS-075,Vanne à boisseau sphérique inox 3/4",valve,stainless_steel,G,3/4,,,,,,piece,1,35.50,6,7,true
+RAC-G14-06,Raccord droit G1/4 pour tube Ø6 mm,fitting,,G,1/4,6,,,,,piece,1,3.20,250,2,true
+RAC-G14-08,Raccord droit G1/4 pour tube Ø8 mm,fitting,,G,1/4,8,,,,,piece,1,3.45,180,2,true
+RAC-M10-06,Raccord droit M10 pour tube Ø6 mm,fitting,,M,M10,6,,,,,piece,1,2.95,130,3,true
+RAC-M12-08,Raccord droit M12 pour tube Ø8 mm,fitting,,M,M12,8,,,,,piece,1,3.60,95,3,true
+TUB-PU-BL-064,Tube PU bleu 6 x 4 mm,tube,polyurethane,,,6,4,blue,,,meter,25,1.35,500,2,true
+TUB-PU-BL-086,Tube PU bleu 8 x 6 mm,tube,polyurethane,,,8,6,blue,,,meter,25,1.65,350,2,true
+TUB-PA-NR-064,Tube PA noir 6 x 4 mm,tube,polyamide,,,6,4,black,,,meter,25,1.55,275,4,true
+TUB-PA-NR-086,Tube PA noir 8 x 6 mm,tube,polyamide,,,8,6,black,,,meter,25,1.90,225,4,true
+CPL-6150-F-14,Coupleur ISO 6150-B femelle G1/4,coupler,,G,1/4,,,,"iso_6150_b",female,piece,1,8.90,65,3,true
+CPL-6150-F-38,Coupleur ISO 6150-B femelle G3/8,coupler,,G,3/8,,,,"iso_6150_b",female,piece,1,10.40,38,3,true
+CPL-6150-M-14,Embout ISO 6150-B mâle G1/4,coupler,,G,1/4,,,,"iso_6150_b",male,piece,1,4.20,120,2,true
+CPL-ARO-F-14,Coupleur profil ARO femelle G1/4,coupler,,G,1/4,,,,aro,female,piece,1,9.30,44,4,true

@@ -1,0 +1,170 @@
+[
+    {
+      "id": "CAL-001",
+      "query": "vanne inox trois quarts",
+      "expected_status": "MATCHED",
+      "expected_sku": "VAN-SS-075"
+    },
+    {
+      "id": "CAL-002",
+      "query": "vanne sphérique inox 3/4",
+      "expected_status": "MATCHED",
+      "expected_sku": "VAN-SS-075"
+    },
+    {
+      "id": "CAL-003",
+      "query": "vanne laiton demi pouce",
+      "expected_status": "MATCHED",
+      "expected_sku": "VAN-BR-050"
+    },
+    {
+      "id": "CAL-004",
+      "query": "vanne sphérique laiton 1/2",
+      "expected_status": "MATCHED",
+      "expected_sku": "VAN-BR-050"
+    },
+    {
+      "id": "CAL-005",
+      "query": "vanne inox 1/2",
+      "expected_status": "MATCHED",
+      "expected_sku": "VAN-SS-050"
+    },
+    {
+      "id": "CAL-006",
+      "query": "vanne 1/2",
+      "expected_status": "AMBIGUOUS",
+      "expected_sku": null
+    },
+    {
+      "id": "CAL-007",
+      "query": "vanne 3/4",
+      "expected_status": "AMBIGUOUS",
+      "expected_sku": null
+    },
+    {
+      "id": "CAL-008",
+      "query": "raccord droit G1/4 tube 6",
+      "expected_status": "MATCHED",
+      "expected_sku": "RAC-G14-06"
+    },
+    {
+      "id": "CAL-009",
+      "query": "raccord G1/4 pour tuyau 8 mm",
+      "expected_status": "MATCHED",
+      "expected_sku": "RAC-G14-08"
+    },
+    {
+      "id": "CAL-010",
+      "query": "raccord droit M10 tube 6",
+      "expected_status": "MATCHED",
+      "expected_sku": "RAC-M10-06"
+    },
+    {
+      "id": "CAL-011",
+      "query": "raccord M12 pour tube diamètre 8",
+      "expected_status": "MATCHED",
+      "expected_sku": "RAC-M12-08"
+    },
+    {
+      "id": "CAL-012",
+      "query": "raccord droit G1/4",
+      "expected_status": "AMBIGUOUS",
+      "expected_sku": null
+    },
+    {
+      "id": "CAL-013",
+      "query": "raccord tube 6 mm",
+      "expected_status": "AMBIGUOUS",
+      "expected_sku": null
+    },
+    {
+      "id": "CAL-014",
+      "query": "tube PU bleu 6x4",
+      "expected_status": "MATCHED",
+      "expected_sku": "TUB-PU-BL-064"
+    },
+    {
+      "id": "CAL-015",
+      "query": "tube polyuréthane bleu 8 par 6",
+      "expected_status": "MATCHED",
+      "expected_sku": "TUB-PU-BL-086"
+    },
+    {
+      "id": "CAL-016",
+      "query": "tube PA noir 6x4",
+      "expected_status": "MATCHED",
+      "expected_sku": "TUB-PA-NR-064"
+    },
+    {
+      "id": "CAL-017",
+      "query": "tube polyamide noir 8x6",
+      "expected_status": "MATCHED",
+      "expected_sku": "TUB-PA-NR-086"
+    },
+    {
+      "id": "CAL-018",
+      "query": "tube 6x4",
+      "expected_status": "AMBIGUOUS",
+      "expected_sku": null
+    },
+    {
+      "id": "CAL-019",
+      "query": "tube noir 8x6",
+      "expected_status": "MATCHED",
+      "expected_sku": "TUB-PA-NR-086"
+    },
+    {
+      "id": "CAL-020",
+      "query": "coupleur ISO 6150 femelle quart de pouce",
+      "expected_status": "MATCHED",
+      "expected_sku": "CPL-6150-F-14"
+    },
+    {
+      "id": "CAL-021",
+      "query": "coupleur 6150 femelle 3/8",
+      "expected_status": "MATCHED",
+      "expected_sku": "CPL-6150-F-38"
+    },
+    {
+      "id": "CAL-022",
+      "query": "embout 6150 mâle G1/4",
+      "expected_status": "MATCHED",
+      "expected_sku": "CPL-6150-M-14"
+    },
+    {
+      "id": "CAL-023",
+      "query": "coupleur ARO femelle 1/4",
+      "expected_status": "MATCHED",
+      "expected_sku": "CPL-ARO-F-14"
+    },
+    {
+      "id": "CAL-024",
+      "query": "coupleur femelle G1/4",
+      "expected_status": "AMBIGUOUS",
+      "expected_sku": null
+    },
+    {
+      "id": "CAL-025",
+      "query": "tube PU bleu 10x8",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+    {
+      "id": "CAL-026",
+      "query": "raccord G1/2 tube 12",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+    {
+      "id": "CAL-027",
+      "query": "vanne bronze 2 pouces",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+    {
+      "id": "CAL-028",
+      "query": "coupleur CEJN femelle G1/4",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    }
+  ]

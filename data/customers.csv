@@ -1,0 +1,6 @@
+customer_id,company_name,price_tier,discount_pct,payment_terms,active
+CUST-001,Atelier Delta,STANDARD,0,30 days,true
+CUST-002,MecaPro Industrie,PRO,7.5,30 days,true
+CUST-003,Novatek Systems,KEY,12.5,45 days,true
+CUST-004,Maintenance Rhône Services,PRO,5,30 days,true
+CUST-005,Industries Valmont,STANDARD,2,30 days,false

@@ -1,0 +1,247 @@
+[
+    {
+      "id": "TEST-001",
+      "query": "vanne sphérique inox trois quarts",
+      "expected_status": "MATCHED",
+      "expected_sku": "VAN-SS-075"
+    },
+    {
+      "id": "TEST-002",
+      "query": "vanne inox demi pouce",
+      "expected_status": "MATCHED",
+      "expected_sku": "VAN-SS-050"
+    },
+    {
+      "id": "TEST-003",
+      "query": "vanne laiton 3/4",
+      "expected_status": "MATCHED",
+      "expected_sku": "VAN-BR-075"
+    },
+    {
+      "id": "TEST-004",
+      "query": "vanne sphérique laiton demi pouce",
+      "expected_status": "MATCHED",
+      "expected_sku": "VAN-BR-050"
+    },
+    {
+      "id": "TEST-005",
+      "query": "vanne sphérique 1/2",
+      "expected_status": "AMBIGUOUS",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-006",
+      "query": "vanne inox",
+      "expected_status": "AMBIGUOUS",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-007",
+      "query": "vanne inox 1 pouce",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-008",
+      "query": "vanne bronze 3/4",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+  
+    {
+      "id": "TEST-009",
+      "query": "raccord G1/4 diamètre 6",
+      "expected_status": "MATCHED",
+      "expected_sku": "RAC-G14-06"
+    },
+    {
+      "id": "TEST-010",
+      "query": "raccord droit 1/4 tube diamètre 8",
+      "expected_status": "MATCHED",
+      "expected_sku": "RAC-G14-08"
+    },
+    {
+      "id": "TEST-011",
+      "query": "raccord métrique M10 diamètre 6",
+      "expected_status": "MATCHED",
+      "expected_sku": "RAC-M10-06"
+    },
+    {
+      "id": "TEST-012",
+      "query": "raccord M12 tube 8 mm",
+      "expected_status": "MATCHED",
+      "expected_sku": "RAC-M12-08"
+    },
+    {
+      "id": "TEST-013",
+      "query": "raccord G1/4",
+      "expected_status": "AMBIGUOUS",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-014",
+      "query": "raccord diamètre 8",
+      "expected_status": "AMBIGUOUS",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-015",
+      "query": "raccord M10 tube 8",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-016",
+      "query": "raccord G3/8 tube 6",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+  
+    {
+      "id": "TEST-017",
+      "query": "tube polyuréthane bleu diamètre extérieur 6 intérieur 4",
+      "expected_status": "MATCHED",
+      "expected_sku": "TUB-PU-BL-064"
+    },
+    {
+      "id": "TEST-018",
+      "query": "tube PU bleu 8 par 6",
+      "expected_status": "MATCHED",
+      "expected_sku": "TUB-PU-BL-086"
+    },
+    {
+      "id": "TEST-019",
+      "query": "tube polyamide noir 6 par 4",
+      "expected_status": "MATCHED",
+      "expected_sku": "TUB-PA-NR-064"
+    },
+    {
+      "id": "TEST-020",
+      "query": "tube noir PA 8x6",
+      "expected_status": "MATCHED",
+      "expected_sku": "TUB-PA-NR-086"
+    },
+    {
+      "id": "TEST-021",
+      "query": "tube bleu 6x4",
+      "expected_status": "MATCHED",
+      "expected_sku": "TUB-PU-BL-064"
+    },
+    {
+      "id": "TEST-022",
+      "query": "tube 8x6",
+      "expected_status": "AMBIGUOUS",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-023",
+      "query": "tube PU noir 6x4",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-024",
+      "query": "tube polyamide bleu 8x6",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+  
+    {
+      "id": "TEST-025",
+      "query": "coupleur 6150 femelle quart",
+      "expected_status": "MATCHED",
+      "expected_sku": "CPL-6150-F-14"
+    },
+    {
+      "id": "TEST-026",
+      "query": "coupleur ISO 6150 femelle trois huitièmes",
+      "expected_status": "MATCHED",
+      "expected_sku": "CPL-6150-F-38"
+    },
+    {
+      "id": "TEST-027",
+      "query": "embout mâle ISO 6150 1/4",
+      "expected_status": "MATCHED",
+      "expected_sku": "CPL-6150-M-14"
+    },
+    {
+      "id": "TEST-028",
+      "query": "coupleur ARO femelle quart de pouce",
+      "expected_status": "MATCHED",
+      "expected_sku": "CPL-ARO-F-14"
+    },
+    {
+      "id": "TEST-029",
+      "query": "coupleur femelle quart de pouce",
+      "expected_status": "AMBIGUOUS",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-030",
+      "query": "coupleur ISO 6150",
+      "expected_status": "AMBIGUOUS",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-031",
+      "query": "coupleur CEJN femelle 3/8",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-032",
+      "query": "coupleur ARO mâle 1/4",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+  
+    {
+      "id": "TEST-033",
+      "query": "van br 075",
+      "expected_status": "MATCHED",
+      "expected_sku": "VAN-BR-075"
+    },
+    {
+      "id": "TEST-034",
+      "query": "RAC G14 O6",
+      "expected_status": "MATCHED",
+      "expected_sku": "RAC-G14-06"
+    },
+    {
+      "id": "TEST-035",
+      "query": "TUB PU BL 086",
+      "expected_status": "MATCHED",
+      "expected_sku": "TUB-PU-BL-086"
+    },
+    {
+      "id": "TEST-036",
+      "query": "CPL 6150 F 38",
+      "expected_status": "MATCHED",
+      "expected_sku": "CPL-6150-F-38"
+    },
+  
+    {
+      "id": "TEST-037",
+      "query": "VAN-BR-050 inox",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-038",
+      "query": "RAC-G14-06 tube 8",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-039",
+      "query": "TUB-PU-BL-064 noir",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    },
+    {
+      "id": "TEST-040",
+      "query": "CPL-6150-F-14 ARO",
+      "expected_status": "NOT_FOUND",
+      "expected_sku": null
+    }
+  ]
