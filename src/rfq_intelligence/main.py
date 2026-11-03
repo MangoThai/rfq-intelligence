@@ -1,3 +1,4 @@
+import os
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -40,11 +41,18 @@ from rfq_intelligence.rfq_processing import (
     process_rfq_email,
 )
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_DATA_DIR = Path(
+    os.getenv(
+        "RFQ_DATA_DIR",
+        "data",
+    )
+).resolve()
 
-_CATALOG_PATH = _PROJECT_ROOT / "data" / "catalog.csv"
-_CUSTOMERS_PATH = _PROJECT_ROOT / "data" / "customers.csv"
-_CONTACTS_PATH = _PROJECT_ROOT / "data" / "customer_contacts.csv"
+_CATALOG_PATH = _DATA_DIR / "catalog.csv"
+
+_CUSTOMERS_PATH = _DATA_DIR / "customers.csv"
+
+_CONTACTS_PATH = _DATA_DIR / "customer_contacts.csv"
 
 _OPENAI_TIMEOUT_SECONDS = 20.0
 _OPENAI_MAX_RETRIES = 1

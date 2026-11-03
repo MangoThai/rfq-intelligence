@@ -1,0 +1,40 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# Local Python environment
+.venv
+
+# Python caches
+__pycache__
+*.py[cod]
+
+# Tool caches
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Development/editor files
+.vscode
+.idea
+
+# OS files
+.DS_Store
+
+# Test and coverage artifacts
+.coverage
+coverage.xml
+htmlcov
+
+# Project content not required at runtime
+tests
+docs
+scripts
+
+# GitHub / development automation
+.github
