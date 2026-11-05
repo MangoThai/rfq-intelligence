@@ -2,11 +2,19 @@ import os
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
+from secrets import compare_digest
 from time import perf_counter
 from uuid import uuid4
 
 import openai
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import (
+    Depends,
+    FastAPI,
+    HTTPException,
+    Request,
+    Security,
+)
+from fastapi.security import APIKeyHeader
 from openai import OpenAI
 from starlette.responses import Response
 
@@ -67,11 +75,55 @@ _TRANSIENT_OPENAI_STATUS_CODES = {
 logger = get_logger("rfq_intelligence.main")
 
 
+_api_key_header = APIKeyHeader(
+    name="X-API-Key",
+    scheme_name="RFQApiKey",
+    description="API key required to process RFQs.",
+    auto_error=False,
+)
+
+
+def require_api_key(
+    request: Request,
+    api_key: str | None = Security(_api_key_header),
+) -> None:
+    expected_api_key: str = request.app.state.rfq_api_key
+
+    if api_key is None or not compare_digest(
+        api_key,
+        expected_api_key,
+    ):
+        logger.warning(
+            "api_authentication_failed",
+            extra={
+                "event": "api_authentication_failed",
+            },
+        )
+
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "code": "INVALID_API_KEY",
+                "message": "A valid API key is required.",
+            },
+            headers={
+                "WWW-Authenticate": "APIKey",
+            },
+        )
+
+
 @asynccontextmanager
 async def lifespan(
     app: FastAPI,
 ) -> AsyncIterator[None]:
     configure_logging()
+
+    rfq_api_key = os.getenv("RFQ_API_KEY")
+
+    if not rfq_api_key:
+        raise RuntimeError("RFQ_API_KEY environment variable is required.")
+
+    app.state.rfq_api_key = rfq_api_key
 
     app.state.products = load_catalog(_CATALOG_PATH)
 
@@ -182,6 +234,7 @@ def health() -> dict[str, str]:
 @app.post(
     "/rfq/process",
     response_model=ProcessRFQResponse,
+    dependencies=[Depends(require_api_key)],
 )
 def process_rfq(
     request: ProcessRFQRequest,

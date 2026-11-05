@@ -197,6 +197,11 @@ def prepare_test_app(
         lambda **_: FakeOpenAIClient(),
     )
 
+    monkeypatch.setenv(
+        "RFQ_API_KEY",
+        "test-rfq-api-key",
+    )
+
 
 def test_health_endpoint(
     monkeypatch: pytest.MonkeyPatch,
@@ -228,6 +233,44 @@ def test_health_endpoint_returns_request_id(
     assert str(parsed_uuid) == request_id
 
 
+def test_process_rfq_requires_api_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prepare_test_app(monkeypatch)
+
+    with TestClient(api.app) as client:
+        response = client.post(
+            "/rfq/process",
+            json={
+                "sender_email": "test@example.com",
+                "email_text": "Bonjour, 10 VAN-BR-050.",
+            },
+        )
+
+    assert response.status_code == 401
+    assert response.json()["detail"]["code"] == "INVALID_API_KEY"
+
+
+def test_process_rfq_rejects_invalid_api_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prepare_test_app(monkeypatch)
+
+    with TestClient(api.app) as client:
+        response = client.post(
+            "/rfq/process",
+            headers={
+                "X-API-Key": "wrong-key",
+            },
+            json={
+                "sender_email": "test@example.com",
+                "email_text": "Bonjour, 10 VAN-BR-050.",
+            },
+        )
+
+    assert response.status_code == 401
+
+
 def test_process_rfq_returns_ready_quote(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -252,6 +295,9 @@ def test_process_rfq_returns_ready_quote(
     with TestClient(api.app) as client:
         response = client.post(
             "/rfq/process",
+            headers={
+                "X-API-Key": "test-rfq-api-key",
+            },
             json={
                 "sender_email": ("achats@atelier-delta.example"),
                 "email_text": ("Bonjour, 10 VAN-BR-050 svp."),
@@ -337,6 +383,9 @@ def test_process_rfq_returns_review_without_model_call(
     with TestClient(api.app) as client:
         response = client.post(
             "/rfq/process",
+            headers={
+                "X-API-Key": "test-rfq-api-key",
+            },
             json={
                 "sender_email": "unknown@example.com",
                 "email_text": "Bonjour, 10 VAN-BR-050.",
@@ -365,6 +414,9 @@ def test_process_rfq_rejects_empty_payload(
     with TestClient(api.app) as client:
         response = client.post(
             "/rfq/process",
+            headers={
+                "X-API-Key": "test-rfq-api-key",
+            },
             json={
                 "sender_email": "",
                 "email_text": "",
@@ -401,6 +453,9 @@ def test_process_rfq_correlates_structured_logs(
         try:
             response = client.post(
                 "/rfq/process",
+                headers={
+                    "X-API-Key": "test-rfq-api-key",
+                },
                 json={
                     "sender_email": ("achats@atelier-delta.example"),
                     "email_text": ("Bonjour, 10 VAN-BR-050 svp."),
@@ -463,6 +518,9 @@ def test_process_rfq_returns_503_when_openai_unavailable(
     with TestClient(api.app) as client:
         response = client.post(
             "/rfq/process",
+            headers={
+                "X-API-Key": "test-rfq-api-key",
+            },
             json={
                 "sender_email": ("achats@atelier-delta.example"),
                 "email_text": ("Bonjour, 10 VAN-BR-050 svp."),
