@@ -71,6 +71,30 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Validate deployment configuration
+        run: |
+          test -n "${{ vars.ACR_NAME }}" || {
+            echo "ACR_NAME is missing"
+            exit 1
+          }
+
+          test -n "${{ vars.ACR_LOGIN_SERVER }}" || {
+            echo "ACR_LOGIN_SERVER is missing"
+            exit 1
+          }
+
+          test -n "${{ vars.RESOURCE_GROUP }}" || {
+            echo "RESOURCE_GROUP is missing"
+            exit 1
+          }
+
+          test -n "${{ vars.CONTAINER_APP }}" || {
+            echo "CONTAINER_APP is missing"
+            exit 1
+          }
+
+          echo "Deployment configuration is available."
+
       - name: Log in to Azure Container Registry
         run: az acr login --name "${{ vars.ACR_NAME }}"
 
