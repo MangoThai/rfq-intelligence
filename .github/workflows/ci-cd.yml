@@ -1,0 +1,158 @@
+name: CI/CD
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Quality checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10
+        with:
+          version: "0.13.7"
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install 3.13.2
+
+      - name: Install dependencies
+        run: uv sync --locked --dev
+
+      - name: Run tests
+        run: uv run pytest
+
+      - name: Run Ruff lint
+        run: uv run ruff check .
+
+      - name: Check Ruff formatting
+        run: uv run ruff format --check .
+
+      - name: Run mypy
+        run: uv run mypy src
+
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    needs: quality
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    environment:
+      name: production
+
+    permissions:
+      contents: read
+      id-token: write
+
+    concurrency:
+      group: production
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Log in to Azure with OIDC
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in to Azure Container Registry
+        run: az acr login --name "${{ vars.ACR_NAME }}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push deployment image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ vars.ACR_LOGIN_SERVER }}/rfq-intelligence:sha-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy image to Azure Container Apps
+        env:
+          IMAGE: ${{ vars.ACR_LOGIN_SERVER }}/rfq-intelligence:sha-${{ github.sha }}
+        run: |
+          az containerapp update \
+            --name "${{ vars.CONTAINER_APP }}" \
+            --resource-group "${{ vars.RESOURCE_GROUP }}" \
+            --image "$IMAGE"
+
+      - name: Smoke test deployment
+        env:
+          RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+          CONTAINER_APP: ${{ vars.CONTAINER_APP }}
+        run: |
+          FQDN="$(
+            az containerapp show \
+              --name "$CONTAINER_APP" \
+              --resource-group "$RESOURCE_GROUP" \
+              --query properties.configuration.ingress.fqdn \
+              --output tsv
+          )"
+
+          echo "Testing https://$FQDN/health"
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --retry 6 \
+            --retry-delay 5 \
+            "https://$FQDN/health"
+
+          echo
+          echo "Health check passed."
+
+      - name: Verify protected endpoint
+        env:
+          RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+          CONTAINER_APP: ${{ vars.CONTAINER_APP }}
+        run: |
+          FQDN="$(
+            az containerapp show \
+              --name "$CONTAINER_APP" \
+              --resource-group "$RESOURCE_GROUP" \
+              --query properties.configuration.ingress.fqdn \
+              --output tsv
+          )"
+
+          STATUS_CODE="$(
+            curl \
+              --silent \
+              --output /dev/null \
+              --write-out "%{http_code}" \
+              --request POST \
+              "https://$FQDN/rfq/process" \
+              --header "Content-Type: application/json" \
+              --data '{
+                "sender_email": "ci@example.com",
+                "email_text": "Bonjour, 10 VAN-BR-050."
+              }'
+          )"
+
+          if [ "$STATUS_CODE" != "401" ]; then
+            echo "Expected HTTP 401, got $STATUS_CODE"
+            exit 1
+          fi
+
+          echo "Protected endpoint correctly returned HTTP 401."
