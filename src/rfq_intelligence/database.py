@@ -1,9 +1,7 @@
-from typing import TypeAlias
-
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-SessionFactory: TypeAlias = sessionmaker[Session]
+type SessionFactory = sessionmaker[Session]
 
 
 def create_database_engine(
