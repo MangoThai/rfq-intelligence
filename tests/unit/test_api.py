@@ -2,11 +2,14 @@ import json
 import logging
 from decimal import Decimal
 from io import StringIO
+from types import TracebackType
+from typing import Literal, Self
 from uuid import UUID
 
 import httpx
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import OperationalError
 
 import rfq_intelligence.main as api
 from rfq_intelligence.customer import Customer
@@ -44,6 +47,45 @@ from rfq_intelligence.rfq_processing import (
 class FakeOpenAIClient:
     def close(self) -> None:
         pass
+
+
+class FakeDatabaseEngine:
+    def dispose(self) -> None:
+        pass
+
+
+class FakeTransaction:
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> Literal[False]:
+        return False
+
+
+class FakeSession:
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> Literal[False]:
+        return False
+
+    def begin(self) -> "FakeTransaction":
+        return FakeTransaction()
+
+
+class FakeSessionFactory:
+    def __call__(self) -> FakeSession:
+        return FakeSession()
 
 
 def make_product() -> Product:
@@ -200,6 +242,29 @@ def prepare_test_app(
     monkeypatch.setenv(
         "RFQ_API_KEY",
         "test-rfq-api-key",
+    )
+
+    monkeypatch.setenv(
+        "DATABASE_URL",
+        "postgresql+psycopg://test:test@localhost/test",
+    )
+
+    monkeypatch.setattr(
+        api,
+        "create_database_engine",
+        lambda database_url: FakeDatabaseEngine(),
+    )
+
+    monkeypatch.setattr(
+        api,
+        "create_session_factory",
+        lambda engine: FakeSessionFactory(),
+    )
+
+    monkeypatch.setattr(
+        api,
+        "persist_rfq_result",
+        lambda **kwargs: None,
     )
 
 
@@ -541,3 +606,98 @@ def test_process_rfq_returns_503_when_openai_unavailable(
     parsed_uuid = UUID(request_id)
 
     assert str(parsed_uuid) == request_id
+
+
+def test_process_rfq_persists_request_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prepare_test_app(monkeypatch)
+
+    monkeypatch.setattr(
+        api,
+        "process_rfq_email",
+        lambda **kwargs: make_ready_result(),
+    )
+
+    persisted: dict[str, object] = {}
+
+    def fake_persist_rfq_result(
+        **kwargs: object,
+    ) -> None:
+        persisted.update(kwargs)
+
+    monkeypatch.setattr(
+        api,
+        "persist_rfq_result",
+        fake_persist_rfq_result,
+    )
+
+    with TestClient(api.app) as client:
+        response = client.post(
+            "/rfq/process",
+            headers={
+                "X-API-Key": "test-rfq-api-key",
+            },
+            json={
+                "sender_email": ("achats@atelier-delta.example"),
+                "email_text": ("Bonjour, 10 VAN-BR-050 svp."),
+            },
+        )
+
+    assert response.status_code == 200
+
+    request_id_from_response = response.headers["X-Request-ID"]
+
+    request_id_from_persistence = persisted["request_id"]
+
+    assert request_id_from_persistence == request_id_from_response
+
+
+def test_process_rfq_returns_503_when_database_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prepare_test_app(monkeypatch)
+
+    monkeypatch.setattr(
+        api,
+        "process_rfq_email",
+        lambda **kwargs: make_ready_result(),
+    )
+
+    def fail_persistence(
+        **kwargs: object,
+    ) -> None:
+        raise OperationalError(
+            "INSERT",
+            {},
+            Exception("database unavailable"),
+        )
+
+    monkeypatch.setattr(
+        api,
+        "persist_rfq_result",
+        fail_persistence,
+    )
+
+    with TestClient(api.app) as client:
+        response = client.post(
+            "/rfq/process",
+            headers={
+                "X-API-Key": "test-rfq-api-key",
+            },
+            json={
+                "sender_email": ("achats@atelier-delta.example"),
+                "email_text": ("Bonjour, 10 VAN-BR-050 svp."),
+            },
+        )
+
+    assert response.status_code == 503
+
+    assert response.json() == {
+        "detail": {
+            "code": "DATABASE_UNAVAILABLE",
+            "message": ("RFQ persistence service is temporarily unavailable."),
+        }
+    }
+
+    assert "X-Request-ID" in response.headers

@@ -71,25 +71,39 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      # ───────────────────────────────────────────────────────────
+      # AJOUT 1 : MIGRATION_JOB ajouté à la validation de config
+      # ───────────────────────────────────────────────────────────
       - name: Validate deployment configuration
+        env:
+          ACR_NAME: ${{ vars.ACR_NAME }}
+          ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+          RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+          CONTAINER_APP: ${{ vars.CONTAINER_APP }}
+          MIGRATION_JOB: ${{ vars.MIGRATION_JOB }}
         run: |
-          test -n "${{ vars.ACR_NAME }}" || {
+          test -n "$ACR_NAME" || {
             echo "ACR_NAME is missing"
             exit 1
           }
 
-          test -n "${{ vars.ACR_LOGIN_SERVER }}" || {
+          test -n "$ACR_LOGIN_SERVER" || {
             echo "ACR_LOGIN_SERVER is missing"
             exit 1
           }
 
-          test -n "${{ vars.RESOURCE_GROUP }}" || {
+          test -n "$RESOURCE_GROUP" || {
             echo "RESOURCE_GROUP is missing"
             exit 1
           }
 
-          test -n "${{ vars.CONTAINER_APP }}" || {
+          test -n "$CONTAINER_APP" || {
             echo "CONTAINER_APP is missing"
+            exit 1
+          }
+
+          test -n "$MIGRATION_JOB" || {
+            echo "MIGRATION_JOB is missing"
             exit 1
           }
 
@@ -112,14 +126,72 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # ───────────────────────────────────────────────────────────
+      # AJOUT 2 : exécution Alembic sur la même image que le déploiement
+      # ───────────────────────────────────────────────────────────
+      - name: Run database migrations
+        env:
+          ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+          RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+          MIGRATION_JOB: ${{ vars.MIGRATION_JOB }}
+        run: |
+          set -euo pipefail
+
+          IMAGE="$ACR_LOGIN_SERVER/rfq-intelligence:sha-$GITHUB_SHA"
+
+          echo "Starting migration job with image:"
+          echo "$IMAGE"
+
+          EXECUTION_NAME="$(
+            az containerapp job start \
+              --name "$MIGRATION_JOB" \
+              --resource-group "$RESOURCE_GROUP" \
+              --image "$IMAGE" \
+              --query name \
+              --output tsv
+          )"
+
+          echo "Migration execution: $EXECUTION_NAME"
+
+          for attempt in {1..60}; do
+            STATUS="$(
+              az containerapp job execution show \
+                --name "$MIGRATION_JOB" \
+                --resource-group "$RESOURCE_GROUP" \
+                --job-execution-name "$EXECUTION_NAME" \
+                --query properties.status \
+                --output tsv
+            )"
+
+            echo "Migration status: $STATUS"
+
+            case "$STATUS" in
+              Succeeded)
+                echo "Database migration succeeded."
+                exit 0
+                ;;
+              Failed)
+                echo "Database migration failed."
+                exit 1
+                ;;
+            esac
+
+            sleep 5
+          done
+
+          echo "Migration did not finish within the allowed polling window."
+          exit 1
+
       - name: Deploy image to Azure Container Apps
         env:
-          IMAGE: ${{ vars.ACR_LOGIN_SERVER }}/rfq-intelligence:sha-${{ github.sha }}
+          ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+          RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+          CONTAINER_APP: ${{ vars.CONTAINER_APP }}
         run: |
           az containerapp update \
-            --name "${{ vars.CONTAINER_APP }}" \
-            --resource-group "${{ vars.RESOURCE_GROUP }}" \
-            --image "$IMAGE"
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$CONTAINER_APP" \
+            --image "$ACR_LOGIN_SERVER/rfq-intelligence:sha-$GITHUB_SHA"
 
       - name: Smoke test deployment
         env:

@@ -16,6 +16,7 @@ from fastapi import (
 )
 from fastapi.security import APIKeyHeader
 from openai import OpenAI
+from sqlalchemy.exc import OperationalError
 from starlette.responses import Response
 
 from rfq_intelligence.api_schemas import (
@@ -35,12 +36,17 @@ from rfq_intelligence.customer_resolution import (
     load_customer_contacts,
 )
 from rfq_intelligence.customers import load_customers
+from rfq_intelligence.database import (
+    create_database_engine,
+    create_session_factory,
+)
 from rfq_intelligence.logging_config import (
     configure_logging,
     get_logger,
     reset_request_id,
     set_request_id,
 )
+from rfq_intelligence.persistence import persist_rfq_result
 from rfq_intelligence.quote import build_quote_summary
 from rfq_intelligence.rfq_processing import (
     ProcessedRFQLine,
@@ -125,6 +131,15 @@ async def lifespan(
 
     app.state.rfq_api_key = rfq_api_key
 
+    database_url = os.getenv("DATABASE_URL")
+
+    if not database_url:
+        raise RuntimeError("DATABASE_URL environment variable is required.")
+
+    app.state.database_engine = create_database_engine(database_url)
+
+    app.state.session_factory = create_session_factory(app.state.database_engine)
+
     app.state.products = load_catalog(_CATALOG_PATH)
 
     app.state.customers = load_customers(_CUSTOMERS_PATH)
@@ -146,6 +161,8 @@ async def lifespan(
     yield
 
     app.state.openai_client.close()
+
+    app.state.database_engine.dispose()
 
     logger.info(
         "service_stopped",
@@ -172,6 +189,8 @@ async def request_context_middleware(
     ],
 ) -> Response:
     request_id = str(uuid4())
+
+    request.state.request_id = request_id
 
     token = set_request_id(request_id)
 
@@ -237,12 +256,13 @@ def health() -> dict[str, str]:
     dependencies=[Depends(require_api_key)],
 )
 def process_rfq(
-    request: ProcessRFQRequest,
+    payload: ProcessRFQRequest,
+    request: Request,
 ) -> ProcessRFQResponse:
     try:
         result = process_rfq_email(
-            email_text=request.email_text,
-            sender_email=request.sender_email,
+            email_text=payload.email_text,
+            sender_email=payload.sender_email,
             products=app.state.products,
             customers=app.state.customers,
             contacts=app.state.contacts,
@@ -268,6 +288,19 @@ def process_rfq(
 
         raise _ai_dependency_unavailable() from exc
 
+    try:
+        with app.state.session_factory() as session, session.begin():
+            persist_rfq_result(
+                session=session,
+                request_id=request.state.request_id,
+                result=result,
+            )
+
+    except OperationalError as exc:
+        _log_database_dependency_failure(exc)
+
+        raise _database_dependency_unavailable() from exc
+
     _log_rfq_result(result)
 
     return _to_api_response(result)
@@ -289,6 +322,16 @@ def _ai_dependency_unavailable() -> HTTPException:
     )
 
 
+def _database_dependency_unavailable() -> HTTPException:
+    return HTTPException(
+        status_code=503,
+        detail={
+            "code": "DATABASE_UNAVAILABLE",
+            "message": ("RFQ persistence service is temporarily unavailable."),
+        },
+    )
+
+
 def _log_ai_dependency_failure(
     error: Exception,
     upstream_status_code: int | None,
@@ -299,6 +342,18 @@ def _log_ai_dependency_failure(
         upstream_status_code,
         extra={
             "event": "ai_dependency_unavailable",
+        },
+    )
+
+
+def _log_database_dependency_failure(
+    error: Exception,
+) -> None:
+    logger.warning(
+        "database_unavailable error_type=%s",
+        type(error).__name__,
+        extra={
+            "event": "database_unavailable",
         },
     )
 
