@@ -50,6 +50,9 @@ COPY --from=builder \
     /app/.venv
 
 COPY --chown=app:app data ./data
+COPY --chown=app:app alembic.ini /app/alembic.ini
+COPY --chown=app:app alembic /app/alembic
+
 
 USER app
 
