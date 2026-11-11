@@ -1,5 +1,6 @@
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import NullPool
 
 DATABASE_CONNECT_TIMEOUT_SECONDS = 5
 
@@ -11,7 +12,7 @@ def create_database_engine(
 ) -> Engine:
     return create_engine(
         database_url,
-        pool_pre_ping=True,
+        poolclass=NullPool,
         connect_args={
             "connect_timeout": (DATABASE_CONNECT_TIMEOUT_SECONDS),
         },
