@@ -144,12 +144,18 @@ jobs:
 
           EXECUTION_NAME="$(
             az containerapp job start \
-              --name "$MIGRATION_JOB" \
-              --resource-group "$RESOURCE_GROUP" \
-              --image "$IMAGE" \
-              --query name \
-              --output tsv
-          )"
+             --name "$MIGRATION_JOB" \
+             --resource-group "$RESOURCE_GROUP" \
+             --container-name "$MIGRATION_JOB" \
+             --image "$IMAGE" \
+            --cpu 0.5 \
+            --memory 1Gi \
+            --command "/app/.venv/bin/alembic" \
+            --args "upgrade" "head" \
+            --env-vars DATABASE_URL=secretref:database-url \
+            --query name \
+            --output tsv
+            )"
 
           echo "Migration execution: $EXECUTION_NAME"
 
