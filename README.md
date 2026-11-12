@@ -6,6 +6,10 @@ RFQ Intelligence transforms unstructured French RFQ emails into structured,
 validated quotation decisions while keeping business-critical rules outside
 the LLM.
 
+V2 extends the validated V1 pipeline with production-oriented deployment,
+PostgreSQL persistence, CI/CD, security, observability, and recovery on Azure.
+
+
 > **Use the LLM for language uncertainty, not for business invariants.**
 
 ---
@@ -821,3 +825,379 @@ operational RFQ distributions.
 RFQ Intelligence is a portfolio engineering project built around a fictional
 industrial distributor and synthetic data. Evaluation results apply only to
 the datasets and system version on which they were measured.
+
+## V2 — Deployment & Operations
+
+V2 takes the validated RFQ processing pipeline from V1 and focuses on operating it as a production-style service.
+
+No additional AI features were introduced. The objective was to address deployment, persistence, security, observability, delivery, and recovery concerns while keeping the application architecture deliberately small.
+
+### Production architecture
+
+```text
+                         GitHub
+                           │
+                    Pull Request / main
+                           │
+                    GitHub Actions
+                 ┌─────────┴─────────┐
+                 │                   │
+          Quality checks         Azure OIDC
+      pytest / Ruff / mypy           │
+                                     │
+                                    ACR
+                             immutable SHA image
+                                     │
+                           Database migration job
+                              Alembic upgrade head
+                                     │
+                              Container Apps
+                           FastAPI / HTTPS / API key
+                             ┌───────┴────────┐
+                             │                │
+                         OpenAI API       PostgreSQL
+                                              │
+                                         persisted RFQs
+
+                              Azure Monitor
+                         logs / metrics / alerts
+```
+
+### Delivery pipeline
+
+Pushes to `main` use GitHub Actions to:
+
+1. run the automated test and static-analysis suite;
+2. authenticate to Azure through OIDC;
+3. build the application container;
+4. push an immutable commit-SHA image to Azure Container Registry;
+5. run `alembic upgrade head` as an Azure Container Apps Job using the same image;
+6. stop the deployment if the migration fails;
+7. deploy the SHA-tagged image to Azure Container Apps;
+8. run production smoke checks.
+
+Azure credentials are not stored as long-lived GitHub passwords or service-principal secrets.
+
+### Persistence
+
+RFQ processing results are persisted in PostgreSQL.
+
+The database stores:
+
+- request IDs;
+- customer and processing status;
+- reason codes;
+- quotation totals;
+- model observability metadata;
+- extracted RFQ lines;
+- product matching decisions;
+- line-level decision status.
+
+Raw RFQ email bodies are not persisted.
+
+Database schema changes are managed exclusively through Alembic migrations rather than application startup schema creation.
+
+### Security
+
+The production API applies several deliberately simple controls:
+
+- HTTPS through Azure Container Apps ingress;
+- `X-API-Key` authentication on RFQ processing;
+- public `/health` endpoint;
+- secrets supplied through Azure configuration rather than embedded in the image;
+- non-root Docker runtime;
+- explicit request validation;
+- bounded external dependency failures;
+- no raw RFQ email content in application logs.
+
+The current authentication model is intentionally suitable for a small internal/service-to-service deployment. It is not intended to replace a full identity platform for a public multi-tenant application.
+
+### Observability
+
+The service emits structured JSON logs to stdout for cloud ingestion.
+
+Requests are assigned a request ID that is:
+
+- returned through `X-Request-ID`;
+- propagated through application processing;
+- included in relevant logs;
+- usable for incident correlation.
+
+Production monitoring includes:
+
+- Container Apps console logs;
+- HTTP access logs;
+- RFQ processing events;
+- external AI dependency failures;
+- database dependency failures;
+- HTTP 5xx monitoring;
+- Azure Monitor alert rules and an Action Group.
+
+### Operational validation
+
+V2 was validated with controlled production-style failure drills rather than only happy-path deployment tests.
+
+#### PostgreSQL outage
+
+The database was deliberately stopped while the API remained online.
+
+Expected and observed behaviour:
+
+- connection attempts are bounded;
+- the API returns HTTP `503`;
+- the response uses the structured `DATABASE_UNAVAILABLE` error;
+- a request ID remains available for correlation;
+- the failure is visible in application and HTTP logs;
+- Azure Monitor detects the dependency/5xx condition;
+- once PostgreSQL returns to `Ready`, the API recovers without an application redeployment.
+
+For this low-traffic service, SQLAlchemy `NullPool` is used deliberately so stale pooled PostgreSQL connections do not cause long network hangs after a database failure.
+
+#### Faulty application revision
+
+A deliberately invalid Container Apps revision was created by removing a required runtime configuration value.
+
+The exercise validated:
+
+- detection of a non-working revision;
+- inspection of revision and application logs;
+- explicit traffic control between revisions;
+- rollback to the previous healthy revision;
+- service recovery without rebuilding the previous image.
+
+#### Database recovery
+
+Azure PostgreSQL point-in-time restore was exercised against an isolated temporary server.
+
+The restored database successfully contained:
+
+- the expected `rfq_requests` data;
+- the expected `rfq_lines` data;
+- the Alembic migration state.
+
+The temporary restore environment was removed after validation.
+
+### Engineering principles
+
+RFQ Intelligence intentionally separates probabilistic language understanding from deterministic business authority.
+
+> The LLM understands the language; the software keeps the business authority.
+
+The LLM is used for structured interpretation of the incoming request.
+
+Python and trusted business data remain responsible for:
+
+- catalog references;
+- product matching boundaries;
+- quantities and units;
+- stock;
+- pricing;
+- discounts;
+- quotation calculations;
+- automation eligibility.
+
+Uncertain cases are routed to human review rather than forcing an automated answer.
+
+### Deliberate non-goals
+
+V2 does not introduce infrastructure or AI components without a demonstrated requirement.
+
+The project therefore deliberately excludes:
+
+- Kubernetes;
+- multi-agent orchestration;
+- MCP;
+- RAG/vector databases;
+- message queues;
+- microservices;
+- complex frontend infrastructure;
+- infrastructure-as-code for this project stage.
+
+The goal of V2 is not infrastructure breadth. It is demonstrating that a small AI-backed business service can be deployed, operated, diagnosed, migrated and recovered safely.## V2 — Deployment & Operations
+
+V2 takes the validated RFQ processing pipeline from V1 and focuses on operating it as a production-style service.
+
+No additional AI features were introduced. The objective was to address deployment, persistence, security, observability, delivery, and recovery concerns while keeping the application architecture deliberately small.
+
+### Production architecture
+
+```text
+                         GitHub
+                           │
+                    Pull Request / main
+                           │
+                    GitHub Actions
+                 ┌─────────┴─────────┐
+                 │                   │
+          Quality checks         Azure OIDC
+      pytest / Ruff / mypy           │
+                                     │
+                                    ACR
+                             immutable SHA image
+                                     │
+                           Database migration job
+                              Alembic upgrade head
+                                     │
+                              Container Apps
+                           FastAPI / HTTPS / API key
+                             ┌───────┴────────┐
+                             │                │
+                         OpenAI API       PostgreSQL
+                                              │
+                                         persisted RFQs
+
+                              Azure Monitor
+                         logs / metrics / alerts
+```
+
+### Delivery pipeline
+
+Pushes to `main` use GitHub Actions to:
+
+1. run the automated test and static-analysis suite;
+2. authenticate to Azure through OIDC;
+3. build the application container;
+4. push an immutable commit-SHA image to Azure Container Registry;
+5. run `alembic upgrade head` as an Azure Container Apps Job using the same image;
+6. stop the deployment if the migration fails;
+7. deploy the SHA-tagged image to Azure Container Apps;
+8. run production smoke checks.
+
+Azure credentials are not stored as long-lived GitHub passwords or service-principal secrets.
+
+### Persistence
+
+RFQ processing results are persisted in PostgreSQL.
+
+The database stores:
+
+- request IDs;
+- customer and processing status;
+- reason codes;
+- quotation totals;
+- model observability metadata;
+- extracted RFQ lines;
+- product matching decisions;
+- line-level decision status.
+
+Raw RFQ email bodies are not persisted.
+
+Database schema changes are managed exclusively through Alembic migrations rather than application startup schema creation.
+
+### Security
+
+The production API applies several deliberately simple controls:
+
+- HTTPS through Azure Container Apps ingress;
+- `X-API-Key` authentication on RFQ processing;
+- public `/health` endpoint;
+- secrets supplied through Azure configuration rather than embedded in the image;
+- non-root Docker runtime;
+- explicit request validation;
+- bounded external dependency failures;
+- no raw RFQ email content in application logs.
+
+The current authentication model is intentionally suitable for a small internal/service-to-service deployment. It is not intended to replace a full identity platform for a public multi-tenant application.
+
+### Observability
+
+The service emits structured JSON logs to stdout for cloud ingestion.
+
+Requests are assigned a request ID that is:
+
+- returned through `X-Request-ID`;
+- propagated through application processing;
+- included in relevant logs;
+- usable for incident correlation.
+
+Production monitoring includes:
+
+- Container Apps console logs;
+- HTTP access logs;
+- RFQ processing events;
+- external AI dependency failures;
+- database dependency failures;
+- HTTP 5xx monitoring;
+- Azure Monitor alert rules and an Action Group.
+
+### Operational validation
+
+V2 was validated with controlled production-style failure drills rather than only happy-path deployment tests.
+
+#### PostgreSQL outage
+
+The database was deliberately stopped while the API remained online.
+
+Expected and observed behaviour:
+
+- connection attempts are bounded;
+- the API returns HTTP `503`;
+- the response uses the structured `DATABASE_UNAVAILABLE` error;
+- a request ID remains available for correlation;
+- the failure is visible in application and HTTP logs;
+- Azure Monitor detects the dependency/5xx condition;
+- once PostgreSQL returns to `Ready`, the API recovers without an application redeployment.
+
+For this low-traffic service, SQLAlchemy `NullPool` is used deliberately so stale pooled PostgreSQL connections do not cause long network hangs after a database failure.
+
+#### Faulty application revision
+
+A deliberately invalid Container Apps revision was created by removing a required runtime configuration value.
+
+The exercise validated:
+
+- detection of a non-working revision;
+- inspection of revision and application logs;
+- explicit traffic control between revisions;
+- rollback to the previous healthy revision;
+- service recovery without rebuilding the previous image.
+
+#### Database recovery
+
+Azure PostgreSQL point-in-time restore was exercised against an isolated temporary server.
+
+The restored database successfully contained:
+
+- the expected `rfq_requests` data;
+- the expected `rfq_lines` data;
+- the Alembic migration state.
+
+The temporary restore environment was removed after validation.
+
+### Engineering principles
+
+RFQ Intelligence intentionally separates probabilistic language understanding from deterministic business authority.
+
+> The LLM understands the language; the software keeps the business authority.
+
+The LLM is used for structured interpretation of the incoming request.
+
+Python and trusted business data remain responsible for:
+
+- catalog references;
+- product matching boundaries;
+- quantities and units;
+- stock;
+- pricing;
+- discounts;
+- quotation calculations;
+- automation eligibility.
+
+Uncertain cases are routed to human review rather than forcing an automated answer.
+
+### Deliberate non-goals
+
+V2 does not introduce infrastructure or AI components without a demonstrated requirement.
+
+The project therefore deliberately excludes:
+
+- Kubernetes;
+- multi-agent orchestration;
+- MCP;
+- RAG/vector databases;
+- message queues;
+- microservices;
+- complex frontend infrastructure;
+- infrastructure-as-code for this project stage.
+
+The goal of V2 is not infrastructure breadth. It is demonstrating that a small AI-backed business service can be deployed, operated, diagnosed, migrated and recovered safely.
